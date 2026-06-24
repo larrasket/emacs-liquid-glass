@@ -1,7 +1,6 @@
-This repo is a small recipe for building Emacs with a Ghostty-like macOS glass frame: =background-opacity = 0.01= with a native =NSGlassEffectView= material.
+This repo is a small recipe for building Emacs with a Ghostty-like macOS glass frame: =background-opacity = 0.01= with a native =NSGlassEffectView= material. For more information, read the [[https://lr0.org/blog/p/emacs-apple-glass/][blog post]].
 
 [[file:screenshot.png]]
-
 
 It assumes =emacs-plus@31= from Homebrew on macOS, because the setup
 layers a local patch on top of the community =frame-transparency= patch.
@@ -32,16 +31,6 @@ git clone https://github.com/larrasket/emacs-liquid-glass
 cd emacs-liquid-glass
 ./install.sh
 #+end_src
-
-The installer runs the same steps shown below:
-
-- copies the patch to =~/.config/emacs-plus/ns-glass-effect.patch=
-- copies the Homebrew config to =~/.config/emacs-plus/build.yml=
-- runs =brew tap d12frosted/emacs-plus= for the underlying
-  =emacs-plus@31= formula
-- rebuilds =emacs-plus@31= from source
-- runs =brew postinstall d12frosted/emacs-plus/emacs-plus@31=
-- syncs the rebuilt app bundles into =/Applications=
 
 Use =./install.sh --no-copy-app= if you do not want it to update
 =/Applications/Emacs.app=.
