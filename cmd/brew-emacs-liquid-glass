@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+set -eu
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+usage() {
+  cat <<'EOF'
+Usage:
+  brew emacs-liquid-glass install [--no-copy-app]
+  brew emacs-liquid-glass path
+  brew emacs-liquid-glass help
+
+Commands:
+  install       Copy config, rebuild emacs-plus@31, run postinstall, and sync apps.
+  path          Print the tapped repo path.
+  help          Show this help.
+EOF
+}
+
+command=${1:-help}
+
+case "$command" in
+  install)
+    shift
+    exec "$repo_dir/install.sh" "$@"
+    ;;
+  path)
+    printf '%s\n' "$repo_dir"
+    ;;
+  help|-h|--help)
+    usage
+    ;;
+  *)
+    printf '%s\n' "Unknown command: $command" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
