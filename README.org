@@ -1,9 +1,50 @@
-This repo is a small recipe for building Emacs with a Ghostty-like macOS glass frame: =background-opacity = 0.01= with a native =NSGlassEffectView= material. For more information, read the [[https://lr0.org/blog/p/emacs-apple-glass/][blog post]].
+#+title: Emacs Liquid Glass
+
+This repo is a small recipe for building Emacs with a
+Ghostty-like macOS glass frame. It layers a local Cocoa patch on top of
+Homebrew =emacs-plus@31= and the community =frame-transparency= patch, then
+configures Emacs with the same shape as Ghostty:
+
+#+begin_src conf
+background-opacity = 0.01
+background-blur = macos-glass-regular
+#+end_src
+
+This is not a dark overlay or a hard-coded theme.  The patch adds native =NSGlassEffectView=
+support only.
 
 [[file:screenshot.png]]
 
-It assumes =emacs-plus@31= from Homebrew on macOS, because the setup
-layers a local patch on top of the community =frame-transparency= patch.
+For the longer write-up, see [[https://lr0.org/blog/p/emacs-apple-glass/][the blog post]].
+
+* What This Builds
+:PROPERTIES:
+:CUSTOM_ID: what-this-builds
+:END:
+
+The recipe uses the =emacs-plus@31= formula, not the =emacs-plus-app= cask.
+The cask ships a prebuilt binary and ignores =~/.config/emacs-plus/build.yml=,
+so it cannot apply local patches.
+
+The build applies two patches, in order:
+
+1. =frame-transparency= from =d12frosted/emacs-plus=
+2. =patches/ns-glass-effect.patch= from this repo
+
+The local patch adds these frame parameters:
+
+| Parameter                 | Purpose                                            |
+|---------------------------+----------------------------------------------------|
+| =ns-glass-material=         | Native material, currently =regular=, =clear=, or =nil=. |
+| =ns-glass-tint-opacity=     | Theme-owned tint opacity over the glass view.      |
+| =ns-glass-saturation=       | Saturation multiplier for the glass tint.          |
+| =ns-glass-inactive-opacity= | Optional opacity when the frame is inactive.       |
+| =ns-glass-corner-radius=    | Optional corner radius for the glass view.         |
+| =ns-alpha-glyphs-alpha=     | Separate alpha for real glyph backgrounds.         |
+
+The last parameter is what makes =alpha-background= values near =0= usable.
+Without it, =hl-line=, regions, and completion selections disappear with the
+frame background. 
 
 
 * Quick Start
@@ -11,14 +52,14 @@ layers a local patch on top of the community =frame-transparency= patch.
 :CUSTOM_ID: quick-start
 :END:
 
-Then install from your tap:
+Install from your tap:
 
 #+begin_src sh
 brew tap larrasket/emacs-liquid-glass
 brew emacs-liquid-glass install
 #+end_src
 
-Without copying the rebuilt app bundle into =/Applications=:
+Skip copying the rebuilt app bundle into =/Applications=:
 
 #+begin_src sh
 brew emacs-liquid-glass install --no-copy-app
@@ -27,18 +68,19 @@ brew emacs-liquid-glass install --no-copy-app
 Direct clone usage also works:
 
 #+begin_src sh
-git clone https://github.com/larrasket/emacs-liquid-glass 
+git clone https://github.com/larrasket/emacs-liquid-glass
 cd emacs-liquid-glass
 ./install.sh
 #+end_src
 
 Use =./install.sh --no-copy-app= if you do not want it to update
-=/Applications/Emacs.app=.
+=/Applications/Emacs.app= and =/Applications/Emacs Client.app=.
 
-** Build
+* Manual Build
 :PROPERTIES:
-:CUSTOM_ID: build
+:CUSTOM_ID: manual-build
 :END:
+
 Copy the patch and build config:
 
 #+begin_src sh
@@ -55,33 +97,84 @@ HOMEBREW_NO_AUTO_UPDATE=1 brew reinstall emacs-plus@31 --build-from-source
 brew postinstall d12frosted/emacs-plus/emacs-plus@31
 #+end_src
 
-Update the app bundle used by =/opt/homebrew/bin/emacs=:
+Copy the app bundles used by Spotlight and =/opt/homebrew/bin/emacs=:
 
 #+begin_src sh
 rsync -a --delete /opt/homebrew/opt/emacs-plus@31/Emacs.app/ /Applications/Emacs.app/
 rsync -a --delete "/opt/homebrew/opt/emacs-plus@31/Emacs Client.app/" "/Applications/Emacs Client.app/"
 #+end_src
 
-** Emacs Config
+* Emacs Config
 :PROPERTIES:
 :CUSTOM_ID: emacs-config
 :END:
-Load =lisp/lr-macos-glass.el= from your config, or copy the
-relevant parts into configuration.
 
-The regular preset uses:
+Load =lisp/lr-macos-glass.el= from your Emacs config. If this repo is installed
+as a Homebrew tap, you can find its path with:
+
+#+begin_src sh
+brew emacs-liquid-glass path
+#+end_src
+
+Example:
 
 #+begin_src elisp
-(setq salih/alpha-background 0.01
+(add-to-list 'load-path "/path/to/emacs-liquid-glass/lisp")
+(require 'lr-macos-glass)
+#+end_src
+
+The regular preset currently uses:
+
+#+begin_src elisp
+(setq salih/glass-style 'macos-glass-regular
+      salih/alpha-background 0.01
       salih/ns-background-blur 0
+      salih/ns-alpha-glyphs-min-alpha 0.24
       salih/ns-glass-material 'regular
       salih/ns-glass-tint-opacity 0.05
-      salih/ns-glass-saturation 1.4
+      salih/ns-glass-saturation 1.9
       salih/ns-glass-inactive-opacity 0.05
       salih/ns-glass-corner-radius 2
       salih/ns-transparent-titlebar t)
 #+end_src
 
+Interactive commands:
+
+| Command                         | Effect                                                    |
+|---------------------------------+-----------------------------------------------------------|
+| =M-x salih/set-glass-style=       | Switch between =macos-glass-regular= and =macos-glass-clear=. |
+| =M-x salih/set-glass=             | Set frame alpha and CGS blur.                             |
+| =M-x salih/set-glass-glyph-alpha= | Set highlight/selection glyph background alpha.           |
+| =M-x salih/toggle-glass=          | Toggle between the glass frame and an opaque frame.       |
+
+If you set =salih/alpha-background= to =0=, keep
+=salih/ns-alpha-glyphs-min-alpha= above =0= if you still want =hl-line=,
+regions, and completion selections to be visible.
+
+* Verification
+:PROPERTIES:
+:CUSTOM_ID: verification
+:END:
+
+If you find issue, please first check that the installed binary contains the new frame parameters:
+
+#+begin_src sh
+strings /Applications/Emacs.app/Contents/MacOS/Emacs \
+  | rg 'ns-alpha-glyphs-alpha|ns-glass-material|ns-glass-saturation'
+#+end_src
 
 
-I have not tested this configuration outside of Doom Emacs, expect the need for modifications.
+If =emacs= reports an invalid =ns-glass-*= value, you are probably running an
+older build than the app bundle you just compiled. Fully quit GUI Emacs, restart
+the daemon if you use one, and make sure =/Applications/Emacs.app= was copied
+from =/opt/homebrew/opt/emacs-plus@31/Emacs.app=.
+
+* Notes
+:PROPERTIES:
+:CUSTOM_ID: notes
+:END:
+
+This has been tested on macOS with Homebrew =emacs-plus@31=. It should not be
+expected to work on GNU/Linux, Windows, terminal Emacs, or the prebuilt
+=emacs-plus-app= cask.
+
