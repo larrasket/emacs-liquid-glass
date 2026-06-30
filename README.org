@@ -55,7 +55,7 @@ frame background.
 Install from your tap:
 
 #+begin_src sh
-brew tap larrasket/emacs-liquid-glass
+brew tap larrasket/emacs-liquid-glass https://github.com/larrasket/emacs-liquid-glass.git
 brew emacs-liquid-glass install
 #+end_src
 
@@ -177,4 +177,3 @@ from =/opt/homebrew/opt/emacs-plus@31/Emacs.app=.
 This has been tested on macOS with Homebrew =emacs-plus@31=. It should not be
 expected to work on GNU/Linux, Windows, terminal Emacs, or the prebuilt
 =emacs-plus-app= cask.
-
